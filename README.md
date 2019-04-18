@@ -5,6 +5,6 @@ Model_1
 - target value is Net Income for the same company in 2018.
 - number of training examples: 1607
 - method: regression
-- lost functions: Mean Absolute Error
+- loss functions: Mean Absolute Error
 - accuracy of prediction is around 1% (in some cases down to 0.3-0.4%)
 - the data is prepared using this repository: https://github.com/sergey0222/SEC-Financial-Statement-Data-Sets-Tools 
