@@ -7,4 +7,4 @@ Model_1
 - method: regression
 - lost functions: Mean Absolute Error
 - accuracy of prediction is around 1% (in some cases down to 0.3-0.4%)
-- the data is prepared using this repository:  
+- the data is prepared using this repository: https://github.com/sergey0222/SEC-Financial-Statement-Data-Sets-Tools 
