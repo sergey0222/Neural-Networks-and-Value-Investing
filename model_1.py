@@ -155,16 +155,16 @@ Y_normilized = (Y - mean) / maximum + 10
 X_out, Y_out, loss_train1, loss_test1 = one_pass (X_normilized, Y_normilized, 0.9)
 m1 = len(X_out)
 
-X_out, Y_out, loss_train2, loss_test2 = one_pass (X_out, Y_out, 0.4)
+X_out, Y_out, loss_train2, loss_test2 = one_pass (X_out, Y_out, 0.7)
 m2 = len(X_out)
 
-X_out, Y_out, loss_train3, loss_test3 = one_pass (X_out, Y_out, 0.25)
+X_out, Y_out, loss_train3, loss_test3 = one_pass (X_out, Y_out, 0.7)
 m3 = len(X_out)
 
-X_out, Y_out, loss_train4, loss_test4 = one_pass (X_out, Y_out, 0.25)
+X_out, Y_out, loss_train4, loss_test4 = one_pass (X_out, Y_out, 0.7)
 m4 = len(X_out)
 
-X_out, Y_out, loss_train5, loss_test5 = one_pass (X_out, Y_out, 0.2)
+X_out, Y_out, loss_train5, loss_test5 = one_pass (X_out, Y_out, 0.7)
 m5 = len(X_out)
 
 print('loss_train, loss_test:', loss_train1, loss_test1)
