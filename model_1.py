@@ -99,6 +99,9 @@ XY = XY_float_cut[elig_cik_list,:]
 # shuffle the array
 np.random.shuffle(XY)
 
+# test with random data
+#XY = np.random.randn(1607,8) * 2 - 1
+
 X = XY[:,0:-1]
 Y = XY[:,-1:]
 
