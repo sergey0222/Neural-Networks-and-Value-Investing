@@ -1,6 +1,7 @@
 # Neural-Networks-and-Value-Investing
 
 Model_1
+
 The goal of this experiment is to check whether it is possible to predict Net Income for 2018 based only on values of Net Incomes for 2011-2017.
 Things to note:
 - all values are scaled to space of -0.5...+0.5
