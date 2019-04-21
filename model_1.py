@@ -8,54 +8,12 @@ import numpy as np
 import csv
 import datasets_lib as ds
 import math
+import pdb
+import matplotlib.pyplot as plt
 
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.regularizers import l1
-
-def one_pass (X, Y, threshold):
-    # the function trains X related to Y and returns X_new Y_new such that
-    # absulute error of Y-Ypred <= threshold
-    
-    # calculate number of traning examples
-    m = np.shape(X)[0]   
-    # set percentage for test set
-    test_percent = 20
-    m_test = math.floor(test_percent/100*m)
-    m_train = m - m_test
-    
-    # Input and labels for neural network
-    X_train = X[0:m_train,:]
-    Y_train = Y[0:m_train,:]
-    
-    X_test = X[m_train:,:]
-    Y_test = Y[m_train:,:]
-     
-    # model
-    model = Sequential()
-    model.add(Dense(64, activation='relu', input_shape=(np.shape(X)[1],)))
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(32, activation='relu'))
-    model.add(Dense(1))
-    model.compile(loss='mean_absolute_error', optimizer='RMSProp')
-    model.fit(X_train, Y_train, epochs=1000, batch_size=32)
-    
-    # evaluate result
-    loss_train = model.evaluate(X_train, Y_train)
-    loss_test = model.evaluate(X_test, Y_test)
-    
-    # count difference between labes and predicted values
-    Ypred = model.predict(X)
-    delta = Y - Ypred
-    
-    # find training exmples eligible for pass2
-    mask_pass2 = np.abs(delta) <=  threshold
-    elig_pass2 = np.nonzero(mask_pass2)[0]
-    
-    X_pass2 = X[elig_pass2,:]
-    Y_pass2 = Y[elig_pass2,:]
-
-    return X_pass2, Y_pass2, loss_train, loss_test
 
 # store starting time for calculating total processing time
 time_start = datetime.datetime.now()
@@ -122,79 +80,105 @@ with open(path + 'filter_1/filter_1_num.txt') as f:
                # write down the correpsonding value
                XY_float[r,c] = value_float
 
+# define a year to predict
+year_to_predict = 2018
+
+# cut only needed years
+XY_bool_cut = XY_bool[:,0:(year_to_predict - first + 1)]
+XY_float_cut = XY_float[:,0:(year_to_predict - first + 1)]
+
 # define rows where values exist for all years in a range
-mask1D = np.all(XY_bool, axis=1, keepdims = True)
+mask1D = np.all(XY_bool_cut, axis=1, keepdims = True)
 
 # create list of eligible ciks
 elig_cik_list = np.nonzero(mask1D)[0]
 
 # extact only eligible rows
-XY = XY_float[elig_cik_list,:]
+XY = XY_float_cut[elig_cik_list,:]
 
 # shuffle the array
 np.random.shuffle(XY)
 
-# define a year to predict
-year_to_predict = 2018
+X = XY[:,0:-1]
+Y = XY[:,-1:]
 
-# cut only needed years
-XY_cut = XY[:,0:(year_to_predict - first + 1)]
+# scale X and Y (using X data only!)
+maximum = np.max(np.abs(X), axis=1, keepdims=True)
+X = X / maximum
+Y = Y / maximum
 
-X = XY_cut[:,0:-1]
-Y = XY_cut[:,-1:]
+# here the training stars with X and Y as input (pass1)
+# set percentage for test set and calculate number of traning examples
+test_percent = 20
+m = np.shape(X)[0]   
+m_test = math.floor(test_percent/100*m)
+m_train = m - m_test
 
-# normalize X (using X data only!)
-mean = np.mean(X, axis=1, keepdims=True)
-X_centered = X - mean
-maximum = np.max(np.abs(X_centered), axis=1, keepdims=True)
-X_normilized = X_centered / maximum + 10
+# Input and labels for neural network
+X_train = X[0:m_train,:]
+Y_train = Y[0:m_train,:]
+X_test = X[m_train:,:]
+Y_test = Y[m_train:,:]
+ 
+# model
+model = Sequential()
+model.add(Dense(64, activation='relu', kernel_regularizer=l1(0.001), input_shape=(np.shape(X)[1],)))
+model.add(Dense(64, activation='relu', kernel_regularizer=l1(0.001)))
+model.add(Dense(1, kernel_regularizer=l1(0.001)))
+model.compile(loss='mean_absolute_error', optimizer='RMSProp')
+model.fit(X_train, Y_train, epochs=500, batch_size=32)
 
-# normilize Y using X data (not Y!)
-Y_normilized = (Y - mean) / maximum + 10
+# evaluate result
+loss_train = model.evaluate(X_train, Y_train)
+loss_test = model.evaluate(X_test, Y_test)
 
-X_out, Y_out, loss_train1, loss_test1 = one_pass (X_normilized, Y_normilized, 0.9)
-m1 = len(X_out)
+# count difference between labes and predicted values
+Ypred = model.predict(X)
+delta = np.abs(Y - Ypred)
+delta_sorted = np.sort(delta,axis=0)
 
-X_out, Y_out, loss_train2, loss_test2 = one_pass (X_out, Y_out, 0.7)
-m2 = len(X_out)
+# find training exmples eligible for pass2
+mask_pass2 = delta <=  0.5
+elig_pass2 = np.nonzero(mask_pass2)[0]
 
-X_out, Y_out, loss_train3, loss_test3 = one_pass (X_out, Y_out, 0.7)
-m3 = len(X_out)
+X = X[elig_pass2,:]
+Y = Y[elig_pass2,:]
 
-X_out, Y_out, loss_train4, loss_test4 = one_pass (X_out, Y_out, 0.7)
-m4 = len(X_out)
+# pass2
+# set percentage for test set and calculate number of traning examples
+test_percent = 20
+m = np.shape(X)[0]   
+m_test = math.floor(test_percent/100*m)
+m_train = m - m_test
 
-X_out, Y_out, loss_train5, loss_test5 = one_pass (X_out, Y_out, 0.7)
-m5 = len(X_out)
+# Input and labels for neural network
+X_train = X[0:m_train,:]
+Y_train = Y[0:m_train,:]
+X_test = X[m_train:,:]
+Y_test = Y[m_train:,:]
+ 
+# model
+model = Sequential()
+model.add(Dense(64, activation='relu', kernel_regularizer=l1(0.001), input_shape=(np.shape(X)[1],)))
+model.add(Dense(64, activation='relu', kernel_regularizer=l1(0.001)))
+model.add(Dense(1, kernel_regularizer=l1(0.001)))
+model.compile(loss='mean_absolute_error', optimizer='RMSProp')
+model.fit(X_train, Y_train, epochs=500, batch_size=32)
 
-print('loss_train, loss_test:', loss_train1, loss_test1)
-print('loss_train, loss_test:', loss_train2, loss_test2)
-print('loss_train, loss_test:', loss_train3, loss_test3)
-print('loss_train, loss_test:', loss_train4, loss_test4)
-print('loss_train, loss_test:', loss_train5, loss_test5)
+# evaluate result
+loss_train2 = model.evaluate(X_train, Y_train)
+loss_test2 = model.evaluate(X_test, Y_test)
 
-print('Shape reduction:', m1, m2, m3, m4, m5)
+# count difference between labes and predicted values
+Ypred = model.predict(X)
+delta2 = np.abs(Y - Ypred)
+delta_sorted2 = np.sort(delta2,axis=0)
 
-
-
-'''
-# let us examine the results manually
-# define which test example to choose
-test_example = 13
-print('Test example input is:', X_test[test_example])
-print('Test example output is', Y_test[test_example])
-
-prediction = model.predict(X_test)
-print('Prediction is:', prediction[test_example,0])   
-'''
+plt.ylim(0,1)
+plt.plot(delta_sorted)  
+plt.plot(delta_sorted2)  
+print('training loss, test loss for pass1:', round(loss_train,2), round(loss_test,2))
+print('training loss, test loss for pass2:', round(loss_train2,2), round(loss_test2,2))
 
 # processing time
-print('time elapsed - ', datetime.datetime.now() - time_start)    
-            
-           
-
-            
-            
-            
-            
-            
+print('time elapsed - ', datetime.datetime.now() - time_start)
