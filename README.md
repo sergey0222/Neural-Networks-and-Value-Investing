@@ -8,6 +8,7 @@ Things to note:
 - all values are scaled to space of -1...+1
 - number of training examples is 1607
 - loss = Mean Absolute Error
+- the input data was prepared using this repo: https://github.com/sergey0222/SEC-Financial-Statement-Data-Sets-Tools
 
 The result is as follows:
 
